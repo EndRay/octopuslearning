@@ -1,9 +1,7 @@
 import urllib.request
 import json
-from datetime import datetime
 
 import rating_calculator
-import rating_system
 
 
 def get_contests():
