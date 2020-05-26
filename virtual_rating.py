@@ -34,38 +34,49 @@ def get_contest_rating_changes(contest_id):
     return res["result"]
 
 
+def calculate_rating_delta(contest_id, other_users):
+    handles = map(lambda x: x[0], other_users)
+    try:
+        standings = get_contest_standings(contest_id, True)
+        rating_changes = get_contest_rating_changes(contest_id)
+    except:
+        return None
+    if not standings or not rating_changes:
+        return None
+    standings = standings["rows"]
+    points = {}
+    for contestant in standings:
+        if len(contestant["party"]["members"]) == 1:
+            points[contestant["party"]["members"][0]["handle"]] = contestant["points"]
+    users = []
+    for contestant in rating_changes:
+        if contestant["handle"] not in handles:
+            users.append((contestant["handle"], points[contestant["handle"]], 0, contestant["oldRating"]))
+    for user in other_users:
+        handle = user[0]
+        rating = user[1]
+        users.append((handle, points[handle], 0, rating))
+
+    calculator = rating_calculator.CodeforcesRatingCalculator(users)
+    return calculator.calculate_rating_changes()
+
+
 def main():
     current_rating = 1500
     handle = "EndRay"
     user_status = get_user_status(handle)
     contests = []
     for submission in user_status:
-        if submission['author']['participantType'] in ["CONTESTANT"]:
+        if submission['author']['participantType'] in ["CONTESTANT", "VIRTUAL", "OUT_OF_COMPETITION"]:
             contests.append((submission['author']['startTimeSeconds'], submission['author']['contestId'],
                              submission['author']['participantType']))
     contests = list(set(contests))
     contests.sort()
-    for startTimeSeconds, contestId, participantType in contests:
-        try:
-            standings = get_contest_standings(contestId, True)
-            rating_changes = get_contest_rating_changes(contestId)
-        except:
+    for start_time_seconds, contest_id, participant_type in contests:
+        delta = calculate_rating_delta(contest_id, [(handle, current_rating)])
+        if delta is None:
             continue
-        if not standings or not rating_changes:
-            continue
-        standings = standings["rows"]
-        points = {}
-        for contestant in standings:
-            if len(contestant["party"]["members"]) == 1:
-                points[contestant["party"]["members"][0]["handle"]] = contestant["points"]
-        users = []
-        for contestant in rating_changes:
-            if contestant["handle"] != handle:
-                users.append((contestant["handle"], points[contestant["handle"]], 0, contestant["oldRating"]))
-        users.append((handle, points[handle], 0, current_rating))
-
-        calculator = rating_calculator.CodeforcesRatingCalculator(users)
-        new_rating = current_rating + calculator.calculate_rating_changes()[handle]
+        new_rating = current_rating + delta[handle]
         print(current_rating, "->", new_rating)
         current_rating = new_rating
 
