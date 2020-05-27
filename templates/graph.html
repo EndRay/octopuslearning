@@ -16,12 +16,10 @@
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.3/dist/Chart.bundle.min.js"></script>
 <script>
+    var myChart;
     function populateChart(data) {
-        graph_data = data.map(({x, y}) => ({x: new Date(x * 1000), y: y}))
-        var ctx = document.getElementById('myChart').getContext('2d')
-        var myChart = new Chart(ctx, new Chart(ctx, {
-            type: 'line',
-            data: {
+        graph_data = data.map(({x, y}) => ({x: new Date(x * 1000), y: y}));
+        myChart.data = {
                 datasets: [{
                     label: "Test 1",
                     fill: false,
@@ -30,7 +28,15 @@
                     data: graph_data,
                     lineTension: 0
                 }]
-            },
+            };
+        myChart.update();
+
+
+    }
+    document.addEventListener("DOMContentLoaded", function(){
+        var ctx = document.getElementById('myChart').getContext('2d');
+        myChart = new Chart(ctx, {
+            type: 'line',
             options: {
                 scales: {
                     xAxes: [{
@@ -41,24 +47,22 @@
                     }],
                 },
             }
-        }));
-    }
-    document.addEventListener("DOMContentLoaded", function(){
-        fetchData('EndRay')
+        });
+        fetchData('EndRay');
     });
     async function fetchData(handle) {
-        let response = await fetch("{{ url_for('static', filename='') }}"+handle)
+        let response = await fetch("{{ url_for('static', filename='') }}"+handle);
 
         if (response.ok) {
-          let data = await response.json()
-          populateChart(data)
+          let data = await response.json();
+          populateChart(data);
         } else {
-          console.log("HTTP error: " + response.status)
+          console.log("HTTP error: " + response.status);
         }
     }
     function loadData() {
-        handles = document.querySelector("#handles").value
-        fetchData(handles)
+        handles = document.querySelector("#handles").value;
+        fetchData(handles);
     }
 </script>
 </body>
