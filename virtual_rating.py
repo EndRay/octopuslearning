@@ -3,23 +3,25 @@ import json
 
 import rating_calculator
 
+#BASE = 'https://codeforces.com'
+BASE = 'http://127.0.0.1:8080'
 
 def get_contests():
-    url = 'https://codeforces.com/api/contest.list'
+    url = f'{BASE}/api/contest.list'
     req = urllib.request.Request(url)
     r = urllib.request.urlopen(req).read()
     return json.loads(r.decode('utf-8'))['result']
 
 
 def get_user_status(handle):
-    url = f'https://codeforces.com/api/user.status?handle={handle}'
+    url = f'{BASE}/api/user.status?handle={handle}'
     req = urllib.request.Request(url)
     r = urllib.request.urlopen(req).read()
     return json.loads(r.decode('utf-8'))['result']
 
 
 def get_contest_standings(contest_id, show_unofficial=False):
-    url = f'https://codeforces.com/api/contest.standings?contestId={contest_id}&showUnofficial={show_unofficial}'
+    url = f'{BASE}/api/contest.standings?contestId={contest_id}&showUnofficial={show_unofficial}'
     req = urllib.request.Request(url)
     r = urllib.request.urlopen(req).read()
     res = json.loads(r.decode('utf-8'))
@@ -27,7 +29,7 @@ def get_contest_standings(contest_id, show_unofficial=False):
 
 
 def get_contest_rating_changes(contest_id):
-    url = f'https://codeforces.com/api/contest.ratingChanges?contestId={contest_id}'
+    url = f'{BASE}/api/contest.ratingChanges?contestId={contest_id}'
     req = urllib.request.Request(url)
     r = urllib.request.urlopen(req).read()
     res = json.loads(r.decode('utf-8'))
@@ -78,7 +80,7 @@ def main():
 
     data = []
 
-    for start_time_seconds, contest_id, participant_type in contests[:5]:
+    for start_time_seconds, contest_id, participant_type in contests:
         delta = calculate_rating_delta(contest_id, [(handle, current_rating)])
         if delta is None:
             continue
