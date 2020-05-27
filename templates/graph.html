@@ -1,38 +1,65 @@
 <html lang="en"><head>
-<title>Line Chart</title>
+<title>Virtual Rating</title>
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
 </head>
 <body>
-<div class="container" style="width:80%;height:80%">
-<canvas id="myChart"></canvas>
+<div class="container" style="width:80%;height:80%; margin: 1rem auto auto auto" >
+    <div class="input-group">
+      <input type="text" class="form-control bg-light border-0 small" placeholder="Handle" id="handles">
+      <div class="input-group-append">
+        <button class="btn btn-primary" type="button" onclick="loadData()">
+            Search
+        </button>
+      </div>
+    </div>
+    <canvas id="myChart"></canvas>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.3/dist/Chart.bundle.min.js"></script>
-<script src="{{ url_for('static', filename='data.js') }}"></script>
 <script>
-    graph_data = graph_data.map(({x, y})=>({x: new Date(x * 1000), y: y}));
-    var ctx = document.getElementById('myChart').getContext('2d');
-    var myChart = new Chart(ctx, new Chart(ctx, {
-       type: 'line',
-       data: {
-           datasets: [{
-               label: "Test 1",
-               fill: false,
-               backgroundColor: "rgba(75,192,192,0.2)",
-               borderColor: "rgba(75,192,192,1)",
-               data: graph_data,
-               lineTension: 0
-           }]
-       },
-       options: {
-         scales: {
-           xAxes: [{
-             type: 'time',
-             time:{
-               unit: 'month'
-             }
-           }],
-         },
-       }
-     }));
+    function populateChart(data) {
+        graph_data = data.map(({x, y}) => ({x: new Date(x * 1000), y: y}))
+        var ctx = document.getElementById('myChart').getContext('2d')
+        var myChart = new Chart(ctx, new Chart(ctx, {
+            type: 'line',
+            data: {
+                datasets: [{
+                    label: "Test 1",
+                    fill: false,
+                    backgroundColor: "rgba(75,192,192,0.2)",
+                    borderColor: "rgba(75,192,192,1)",
+                    data: graph_data,
+                    lineTension: 0
+                }]
+            },
+            options: {
+                scales: {
+                    xAxes: [{
+                        type: 'time',
+                        time: {
+                            unit: 'month'
+                        }
+                    }],
+                },
+            }
+        }));
+    }
+    document.addEventListener("DOMContentLoaded", function(){
+        fetchData('EndRay')
+    });
+    async function fetchData(handle) {
+        let response = await fetch("{{ url_for('static', filename='') }}"+handle)
+
+        if (response.ok) {
+          let data = await response.json()
+          populateChart(data)
+        } else {
+          console.log("HTTP error: " + response.status)
+        }
+    }
+    function loadData() {
+        handles = document.querySelector("#handles").value
+        fetchData(handles)
+    }
 </script>
 </body>
 </html>

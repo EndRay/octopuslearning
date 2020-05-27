@@ -1,5 +1,6 @@
 import urllib.request
 import json
+from datetime import datetime
 
 import rating_calculator
 
@@ -67,7 +68,7 @@ def calculate_rating_delta(contest_id, other_users):
 
 def main():
     current_rating = 1500
-    handle = "EndRay"
+    handle = "TryMax"
     user_status = get_user_status(handle)
     contests = []
     for submission in user_status:
@@ -77,9 +78,6 @@ def main():
     contests = list(set(contests))
     contests.sort()
 
-    data_f = open("static/data.js", "w")
-    data_f.write("graph_data = ")
-
     data = []
 
     for start_time_seconds, contest_id, participant_type in contests:
@@ -87,10 +85,11 @@ def main():
         if delta is None:
             continue
         new_rating = current_rating + delta[handle]
-        print(current_rating, "->", new_rating)
+        print(f'{datetime.fromtimestamp(start_time_seconds)}\t:  {current_rating} -> {new_rating}')
         current_rating = new_rating
         data.append({"x": start_time_seconds, "y": new_rating})
 
+    data_f = open(f"static/{handle}", "w")
     data_f.write(json.dumps(data))
     data_f.close()
 
