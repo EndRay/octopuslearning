@@ -72,15 +72,23 @@ def main():
                              submission['author']['participantType']))
     contests = list(set(contests))
     contests.sort()
-    for start_time_seconds, contest_id, participant_type in contests:
+
+    data_f = open("data.js", "w")
+    data_f.write("graph_data = ")
+
+    data = []
+
+    for start_time_seconds, contest_id, participant_type in contests[:5]:
         delta = calculate_rating_delta(contest_id, [(handle, current_rating)])
         if delta is None:
             continue
         new_rating = current_rating + delta[handle]
         print(current_rating, "->", new_rating)
         current_rating = new_rating
+        data.append({"x": start_time_seconds, "y": new_rating})
 
-    print(contests)
+    data_f.write(json.dumps(data))
+    data_f.close()
 
 
 main()
