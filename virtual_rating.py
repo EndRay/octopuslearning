@@ -47,17 +47,19 @@ def calculate_rating_delta(contest_id, other_users):
         return None
     standings = standings["rows"]
     points = {}
+    penalty = {}
     for contestant in standings:
-        if len(contestant["party"]["members"]) == 1:
+        if len(contestant["party"]["members"]) == 1 and contestant["party"]["participantType"] in ["CONTESTANT", "VIRTUAL", "OUT_OF_COMPETITION"]:
             points[contestant["party"]["members"][0]["handle"]] = contestant["points"]
+            penalty[contestant["party"]["members"][0]["handle"]] = contestant["penalty"] if "penalty" in contestant.keys() else 0
     users = []
     for contestant in rating_changes:
         if contestant["handle"] not in handles:
-            users.append((contestant["handle"], points[contestant["handle"]], 0, contestant["oldRating"]))
+            users.append((contestant["handle"], points[contestant["handle"]], penalty[contestant["handle"]], contestant["oldRating"]))
     for user in other_users:
         handle = user[0]
         rating = user[1]
-        users.append((handle, points[handle], 0, rating))
+        users.append((handle, points[handle], penalty[handle], rating))
 
     calculator = rating_calculator.CodeforcesRatingCalculator(users)
     return calculator.calculate_rating_changes()
