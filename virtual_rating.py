@@ -73,7 +73,7 @@ def main():
     contests = list(set(contests))
     contests.sort()
 
-    data_f = open("data.js", "w")
+    data_f = open("static/data.js", "w")
     data_f.write("graph_data = ")
 
     data = []
