@@ -4,8 +4,8 @@ from datetime import datetime
 
 import rating_calculator
 
-#BASE = 'https://codeforces.com'
-BASE = 'http://127.0.0.1:8080'
+BASE = 'https://codeforces.com'
+#BASE = 'http://127.0.0.1:8080'
 
 def get_contests():
     url = f'{BASE}/api/contest.list'
@@ -47,12 +47,16 @@ def calculate_rating_delta(contest_id, other_users):
     if not standings or not rating_changes:
         return None
     standings = standings["rows"]
+    for contestant in standings:
+        if contestant["party"]["participantType"] == "CONTESTANT" and len(contestant["party"]["members"]) > 1:
+            return None
     points = {}
     penalty = {}
     for contestant in standings:
-        if len(contestant["party"]["members"]) == 1 and contestant["party"]["participantType"] in ["CONTESTANT", "VIRTUAL", "OUT_OF_COMPETITION"]:
-            points[contestant["party"]["members"][0]["handle"]] = contestant["points"]
-            penalty[contestant["party"]["members"][0]["handle"]] = contestant["penalty"] if "penalty" in contestant.keys() else 0
+        if contestant["party"]["participantType"] in ["CONTESTANT", "VIRTUAL", "OUT_OF_COMPETITION"]:
+            for member in contestant["party"]["members"]:
+                points[member["handle"]] = contestant["points"]
+                penalty[member["handle"]] = contestant["penalty"] if "penalty" in contestant.keys() else 0
     users = []
     for contestant in rating_changes:
         if contestant["handle"] not in handles:
@@ -68,7 +72,7 @@ def calculate_rating_delta(contest_id, other_users):
 
 def main():
     current_rating = 1500
-    handle = "TryMax"
+    handle = "Sonechko"
     user_status = get_user_status(handle)
     contests = []
     for submission in user_status:
