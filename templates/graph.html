@@ -21,6 +21,8 @@
 <!-- Chart code -->
 <script>
     var chart;
+    var virtualRatingSeries;
+    var realRatingSeries;
     am4core.ready(function() {
         // Themes add animation on data changes
         am4core.useTheme(am4themes_animated);
@@ -29,18 +31,29 @@
         chart.legend.position = 'top';
         var dateAxis = chart.xAxes.push(new am4charts.DateAxis());
         var valueAxis = chart.yAxes.push(new am4charts.ValueAxis());
-        var series1 = chart.series.push(new am4charts.LineSeries());
-        series1.dataFields.valueY = "y";
-        series1.dataFields.dateX = "x";
-        series1.strokeWidth = 3;
-        series1.stroke = 'rgb(237,194,64)';
+        virtualRatingSeries = chart.series.push(new am4charts.LineSeries());
+        virtualRatingSeries.dataFields.valueY = "y";
+        virtualRatingSeries.dataFields.dateX = "x";
+        virtualRatingSeries.strokeWidth = 3;
+        virtualRatingSeries.stroke = 'rgba(237,113,64,0.5)';
         var bullet = new am4charts.CircleBullet();
-        bullet.fill = 'rgb(255,255,255)';
+        bullet.fill = 'rgba(255,255,255,0.5)';
         bullet.strokeWidth = 3;
-        series1.bullets.push(bullet);
-        series1.tooltipText = "{valueY.value}";
-        series1.filters.push(new am4core.DropShadowFilter());
+        virtualRatingSeries.bullets.push(bullet);
+        virtualRatingSeries.tooltipText = "{valueY.value}";
+        virtualRatingSeries.filters.push(new am4core.DropShadowFilter());
 
+        realRatingSeries = chart.series.push(new am4charts.LineSeries());
+        realRatingSeries.dataFields.valueY = "y";
+        realRatingSeries.dataFields.dateX = "x";
+        realRatingSeries.strokeWidth = 3;
+        realRatingSeries.stroke = 'rgb(237,194,64)';
+        var bullet_real = new am4charts.CircleBullet();
+        bullet_real.fill = 'rgb(255,255,255)';
+        bullet_real.strokeWidth = 3;
+        realRatingSeries.bullets.push(bullet);
+        realRatingSeries.tooltipText = "{valueY.value}";
+        realRatingSeries.filters.push(new am4core.DropShadowFilter());
 
         // Add chart cursor
         chart.cursor = new am4charts.XYCursor();
@@ -67,11 +80,6 @@
         }
     }); // end am4core.ready()
 
-    function populateChart(data, handle) {
-        chart.data = data.map(({x, y}) => ({x: new Date(x * 1000), y: y}));
-        chart.series.values[0].name = handle;
-
-    }
     document.addEventListener("DOMContentLoaded", function(){
         fetchData('EndRay');
     });
@@ -80,9 +88,21 @@
 
         if (response.ok) {
           let data = await response.json();
-          populateChart(data, handle);
+          virtualRatingSeries.data = data.map(({x, y}) => ({x: new Date(x * 1000), y: y}));
+          virtualRatingSeries.name = handle + "(virtual)";
         } else {
           console.log("HTTP error: " + response.status);
+        }
+
+        let cfResponse = await fetch("https://codeforces.com/api/user.rating?handle="+handle);
+
+        if (cfResponse.ok) {
+          let data = await cfResponse.json();
+          console.log(data.result);
+          realRatingSeries.data = data.result.map((ratingChange) => ({x: new Date(ratingChange.ratingUpdateTimeSeconds * 1000), y: ratingChange.newRating}));
+          realRatingSeries.name = handle;
+        } else {
+          console.log("HTTP error: " + cfResponse.status);
         }
     }
     function loadData() {
