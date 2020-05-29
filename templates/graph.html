@@ -33,12 +33,13 @@
         series1.dataFields.valueY = "y";
         series1.dataFields.dateX = "x";
         series1.strokeWidth = 3;
-        series1.stroke = 'rgb(165,138,57)';
+        series1.stroke = 'rgb(237,194,64)';
         var bullet = new am4charts.CircleBullet();
         bullet.fill = 'rgb(255,255,255)';
         bullet.strokeWidth = 3;
         series1.bullets.push(bullet);
         series1.tooltipText = "{valueY.value}";
+        series1.filters.push(new am4core.DropShadowFilter());
 
 
         // Add chart cursor
