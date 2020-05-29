@@ -12,42 +12,66 @@
         </button>
       </div>
     </div>
-    <canvas id="myChart"></canvas>
+    <div id="ratingChart"></div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.3/dist/Chart.bundle.min.js"></script>
+<!-- Resources -->
+<script src="https://www.amcharts.com/lib/4/core.js"></script>
+<script src="https://www.amcharts.com/lib/4/charts.js"></script>
+<script src="https://www.amcharts.com/lib/4/themes/animated.js"></script>
+<!-- Chart code -->
 <script>
-    var myChart;
-    function populateChart(data, handle) {
-        graph_data = data.map(({x, y}) => ({x: new Date(x * 1000), y: y}));
-        myChart.data = {
-                datasets: [{
-                    label: handle,
-                    fill: false,
-                    backgroundColor: "rgba(75,192,192,0.2)",
-                    borderColor: "rgba(75,192,192,1)",
-                    data: graph_data,
-                    lineTension: 0
-                }]
-            };
-        myChart.update();
+    var chart;
+    am4core.ready(function() {
+        // Themes add animation on data changes
+        am4core.useTheme(am4themes_animated);
+        chart = am4core.create("ratingChart", am4charts.XYChart);
+        chart.legend = new am4charts.Legend();
+        chart.legend.position = 'top';
+        var dateAxis = chart.xAxes.push(new am4charts.DateAxis());
+        var valueAxis = chart.yAxes.push(new am4charts.ValueAxis());
+        var series1 = chart.series.push(new am4charts.LineSeries());
+        series1.dataFields.valueY = "y";
+        series1.dataFields.dateX = "x";
+        series1.strokeWidth = 3;
+        series1.stroke = 'rgb(165,138,57)';
+        var bullet = new am4charts.CircleBullet();
+        bullet.fill = 'rgb(255,255,255)';
+        bullet.strokeWidth = 3;
+        series1.bullets.push(bullet);
+        series1.tooltipText = "{valueY.value}";
 
+
+        // Add chart cursor
+        chart.cursor = new am4charts.XYCursor();
+
+        // Create ranges
+        const ratingColors = [
+            {startRating: -3000, endRating:1200, color: 'rgb(204, 204, 204)'},
+            {startRating: 1200, endRating:1400, color: 'rgb(119,255,119)'},
+            {startRating: 1400, endRating:1600, color: 'rgb(119,221,187)'},
+            {startRating: 1600, endRating:1900, color: 'rgb(170,170,255)'},
+            {startRating: 1900, endRating:2100, color: 'rgb(255,136,255)'},
+            {startRating: 2100, endRating:2300, color: 'rgb(255,204,136)'},
+            {startRating: 2300, endRating:2400, color: 'rgb(255,187,85)'},
+            {startRating: 2400, endRating:2600, color: 'rgb(255,119,119)'},
+            {startRating: 2600, endRating:3000, color: 'rgb(255,51,51)'},
+            {startRating: 3000, endRating:6000, color: 'rgb(170,0,0)'}
+        ]
+        for (r of ratingColors) {
+            var range = valueAxis.axisRanges.create();
+            range.value = r.startRating;
+            range.endValue = r.endRating;
+            range.axisFill.fill = r.color;
+            range.axisFill.fillOpacity = 1;
+        }
+    }); // end am4core.ready()
+
+    function populateChart(data, handle) {
+        chart.data = data.map(({x, y}) => ({x: new Date(x * 1000), y: y}));
+        chart.series.values[0].name = handle;
 
     }
     document.addEventListener("DOMContentLoaded", function(){
-        var ctx = document.getElementById('myChart').getContext('2d');
-        myChart = new Chart(ctx, {
-            type: 'line',
-            options: {
-                scales: {
-                    xAxes: [{
-                        type: 'time',
-                        time: {
-                            unit: 'month'
-                        }
-                    }],
-                },
-            }
-        });
         fetchData('EndRay');
     });
     async function fetchData(handle) {
