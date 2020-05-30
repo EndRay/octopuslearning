@@ -40,22 +40,44 @@ def get_contest_rating_changes(contest_id):
     return res["result"]
 
 
-def read_contest(contest_id):
-    if len(session.query(Performance).filter(Performance.contestId == contest_id).all()) != 0:
+def read_contest(contest_id, refresh=False):
+    if refresh:
+        session.query(Performance).filter(Performance.contestId == contest_id).delete(synchronize_session=False)
+        session.query(Contest).filter(Contest.contestId == contest_id).delete(synchronize_session=False)
+        session.commit()
+    if session.query(Contest.isBroken).filter(Contest.contestId == contest_id).scalar():
+        return False
+    if session.query(Performance).filter(Performance.contestId == contest_id).first() is not None:
         return True
+    contest = Contest()
+    contest.contestId = contest_id
+    contest.isBroken = True
+    contest.name = None
+    contest.durationSeconds = None
+    contest.startTimeSeconds = None
     try:
         standings = get_contest_standings(contest_id, True)
         rating_changes = get_contest_rating_changes(contest_id)
     except:
+        session.add(contest)
+        session.commit()
         return False
     if not standings or not rating_changes:
+        session.add(contest)
+        session.commit()
         return False
-    contest_name = standings["contest"]["name"]
-    contest_duration = standings["contest"]["name"]
+    contest.name = standings["contest"]["name"]
+    contest.durationSeconds = standings["contest"]["durationSeconds"]
+    contest.startTimeSeconds = standings["contest"]["startTimeSeconds"]
     standings = standings["rows"]
     for contestant in standings:
         if contestant["party"]["participantType"] == "CONTESTANT" and len(contestant["party"]["members"]) > 1:
+            session.add(contest)
+            session.commit()
             return False
+    contest.isBroken = False
+    session.add(contest)
+    session.commit()
     performances = {}
     for contestant in standings:
         if contestant["party"]["participantType"] in ["CONTESTANT", "VIRTUAL", "OUT_OF_COMPETITION"]:
@@ -69,8 +91,7 @@ def read_contest(contest_id):
                 performances[handle].oldRating = None
     for contestant in rating_changes:
         performances[contestant["handle"]].oldRating = contestant["oldRating"]
-    for performance in performances.values():
-        session.add(performance)
+    session.bulk_save_objects(performances.values())
     session.commit()
     return True
 
@@ -78,14 +99,11 @@ def read_contest(contest_id):
 def calculate_rating_delta(contest_id, other_users):
     if not read_contest(contest_id):
         return None
-    handles = map(lambda x: x[0], other_users)
     users = session.query(Performance.handle, Performance.points, Performance.penalty, Performance.oldRating) \
         .filter(Performance.contestId == contest_id).filter(Performance.oldRating != None).all()
-    for user in other_users:
-        handle = user[0]
-        rating = user[1]
-        points, penalty = session.query(Performance.points, Performance.penalty)\
-            .filter(Performance.contestId == contest_id).filter(Performance.handle == handle).all()[0]
+    for handle, rating in other_users:
+        points, penalty = session.query(Performance.points, Performance.penalty) \
+            .filter(Performance.contestId == contest_id).filter(Performance.handle == handle).one()
         users.append((handle, points, penalty, rating))
     calculator = rating_calculator.CodeforcesRatingCalculator(users)
     return calculator.calculate_rating_changes()

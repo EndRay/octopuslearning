@@ -14,12 +14,14 @@ class Performance(Base):
     points = Column(Integer)
     penalty = Column(Integer)
 
-# class Contest(Base):
-#     __tablename__ = 'contests'
-#     contestId = Column(Integer, primary_key=True)
-#     startTimeSeconds = Column(Integer)
-#     name = Column(String)
-#     durationSeconds = Column(Integer)
+
+class Contest(Base):
+    __tablename__ = 'contests'
+    contestId = Column(Integer, primary_key=True)
+    startTimeSeconds = Column(Integer)
+    name = Column(String)
+    durationSeconds = Column(Integer)
+    isBroken = Column(Integer)
 
 
 engine = create_engine('sqlite:///codeforces.sqlite')
