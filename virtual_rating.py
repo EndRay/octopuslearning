@@ -111,7 +111,7 @@ def calculate_rating_delta(contest_id, other_users):
 
 def main():
     current_rating = 1500
-    handle = "EndRay"
+    handle = "Sonechko"
     user_status = get_user_status(handle)
     contests = []
     for submission in user_status:
