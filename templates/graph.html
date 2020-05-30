@@ -29,16 +29,22 @@
         chart = am4core.create("ratingChart", am4charts.XYChart);
         chart.legend = new am4charts.Legend();
         chart.legend.position = 'top';
+
         var dateAxis = chart.xAxes.push(new am4charts.DateAxis());
         var valueAxis = chart.yAxes.push(new am4charts.ValueAxis());
+
         virtualRatingSeries = chart.series.push(new am4charts.LineSeries());
         virtualRatingSeries.dataFields.valueY = "y";
         virtualRatingSeries.dataFields.dateX = "x";
         virtualRatingSeries.strokeWidth = 3;
         virtualRatingSeries.stroke = 'rgba(237,113,64,0.5)';
+
         var bullet = new am4charts.CircleBullet();
         bullet.fill = 'rgba(255,255,255,0.5)';
         bullet.strokeWidth = 3;
+        bullet.tooltipText = `Contest: {contest}
+        Date: {x} Rating: {y}`;
+
         virtualRatingSeries.bullets.push(bullet);
         virtualRatingSeries.tooltipText = "{valueY.value}";
         virtualRatingSeries.filters.push(new am4core.DropShadowFilter());
@@ -54,9 +60,6 @@
         realRatingSeries.bullets.push(bullet);
         realRatingSeries.tooltipText = "{valueY.value}";
         realRatingSeries.filters.push(new am4core.DropShadowFilter());
-
-        // Add chart cursor
-        chart.cursor = new am4charts.XYCursor();
 
         // Create ranges
         const ratingColors = [
@@ -99,7 +102,7 @@
         if (cfResponse.ok) {
           let data = await cfResponse.json();
           console.log(data.result);
-          realRatingSeries.data = data.result.map((ratingChange) => ({x: new Date(ratingChange.ratingUpdateTimeSeconds * 1000), y: ratingChange.newRating}));
+          realRatingSeries.data = data.result.map((ratingChange) => ({x: new Date(ratingChange.ratingUpdateTimeSeconds * 1000), y: ratingChange.newRating, contest: ratingChange.contestName}));
           realRatingSeries.name = handle;
         } else {
           console.log("HTTP error: " + cfResponse.status);
