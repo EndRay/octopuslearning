@@ -40,20 +40,44 @@ def get_contest_rating_changes(contest_id):
     return res["result"]
 
 
-def read_contest(contest_id):
+def read_contest(contest_id, refresh=False):
+    if refresh:
+        session.query(Performance).filter(Performance.contestId == contest_id).delete(synchronize_session=False)
+        session.query(Contest).filter(Contest.contestId == contest_id).delete(synchronize_session=False)
+        session.commit()
+    if session.query(Contest.isBroken).filter(Contest.contestId == contest_id).scalar():
+        return False
     if session.query(Performance).filter(Performance.contestId == contest_id).first() is not None:
         return True
+    contest = Contest()
+    contest.contestId = contest_id
+    contest.isBroken = True
+    contest.name = None
+    contest.durationSeconds = None
+    contest.startTimeSeconds = None
     try:
         standings = get_contest_standings(contest_id, True)
         rating_changes = get_contest_rating_changes(contest_id)
     except:
+        session.add(contest)
+        session.commit()
         return False
     if not standings or not rating_changes:
+        session.add(contest)
+        session.commit()
         return False
+    contest.name = standings["contest"]["name"]
+    contest.durationSeconds = standings["contest"]["durationSeconds"]
+    contest.startTimeSeconds = standings["contest"]["startTimeSeconds"]
     standings = standings["rows"]
     for contestant in standings:
         if contestant["party"]["participantType"] == "CONTESTANT" and len(contestant["party"]["members"]) > 1:
+            session.add(contest)
+            session.commit()
             return False
+    contest.isBroken = False
+    session.add(contest)
+    session.commit()
     performances = {}
     for contestant in standings:
         if contestant["party"]["participantType"] in ["CONTESTANT", "VIRTUAL", "OUT_OF_COMPETITION"]:
