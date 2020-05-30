@@ -50,8 +50,7 @@
         var bullet = new am4charts.CircleBullet();
         bullet.fill = 'rgba(255,255,255,0.5)';
         bullet.strokeWidth = 3;
-        bullet.tooltipText = `Date: {x} Rating: {y}
-        [bold]{contest}[/]`;
+        bullet.tooltipHTML = "{tooltip}";
 
         virtualRatingSeries.bullets.push(bullet);
         virtualRatingSeries.tooltipText = "{valueY.value}";
@@ -66,8 +65,7 @@
         var bullet_real = new am4charts.CircleBullet();
         bullet_real.fill = 'rgb(255,255,255)';
         bullet_real.strokeWidth = 3
-        bullet_real.tooltipText = `Date: {x} Rating: {y}
-        [bold]{contest}[/]`;
+        bullet_real.tooltipHTML = "{tooltip}";
 
         realRatingSeries.bullets.push(bullet_real);
         realRatingSeries.tooltipText = "{valueY.value}";
@@ -103,7 +101,19 @@
 
         if (response.ok) {
           let data = await response.json();
-          virtualRatingSeries.data = data.map(({x, y}) => ({x: new Date(x * 1000), y: y}));
+          // virtualRatingSeries.data = data.map(({x, y, delta, contest}) => ({x: new Date(x * 1000), y: y, delta: delta, contest:contest}));
+          virtualRatingSeries.data = data.map(({x, y, delta, contest}) => {
+               var dict = {};
+               dict.x = x * 1000;
+               dict.y = y;
+               var tooltip = "";
+               tooltip += '<div style = "color: black">= ' + y.toString() + ' ('
+                   + '<span style="color:'+ ((delta < 0) ? 'red">':'green">+')
+                   + delta.toString() + '</span>)</div>';
+               tooltip += '<b>' + contest + '</b>';
+               dict.tooltip = tooltip;
+               return dict;
+           });
           virtualRatingSeries.name = handle + "(virtual)";
         } else {
           console.log("HTTP error: " + response.status);
@@ -114,7 +124,18 @@
         if (cfResponse.ok) {
           let data = await cfResponse.json();
           console.log(data.result);
-          realRatingSeries.data = data.result.map((ratingChange) => ({x: new Date(ratingChange.ratingUpdateTimeSeconds * 1000), y: ratingChange.newRating, contest: ratingChange.contestName}));
+           realRatingSeries.data = data.result.map((ratingChange) => {
+               var dict = {};
+               dict.x = new Date(ratingChange.ratingUpdateTimeSeconds * 1000);
+               dict.y = ratingChange.newRating;
+               var tooltip = "";
+               tooltip += '<div style = "color: black">= ' + dict.y.toString() + ' ('
+                   + '<span style="color:'+ ((ratingChange.newRating - ratingChange.oldRating < 0)?'red">':'green">+')
+                   + (ratingChange.newRating - ratingChange.oldRating).toString() + '</span>)</div>';
+               tooltip += '<b>' + ratingChange.contestName + '</b>';
+               dict.tooltip = tooltip;
+               return dict;
+           });
           realRatingSeries.name = handle;
         } else {
           console.log("HTTP error: " + cfResponse.status);

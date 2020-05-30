@@ -130,7 +130,8 @@ def main():
         new_rating = current_rating + delta[handle]
         print(f'{datetime.fromtimestamp(start_time_seconds)}\t:  {current_rating} -> {new_rating}')
         current_rating = new_rating
-        data.append({"x": start_time_seconds, "y": new_rating})
+        data.append({"x": start_time_seconds, "y": new_rating, "delta": delta[handle], "contest": session.query(Contest.name) \
+                     .filter(Contest.contestId == contest_id).one()})
 
     data_f = open(f"static/{handle}", "w")
     data_f.write(json.dumps(data))
