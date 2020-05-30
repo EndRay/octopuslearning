@@ -33,17 +33,25 @@
         var dateAxis = chart.xAxes.push(new am4charts.DateAxis());
         var valueAxis = chart.yAxes.push(new am4charts.ValueAxis());
 
+        //adding scrollbars
+        chart.scrollbarX = new am4core.Scrollbar();
+        function customizeGrip(grip){
+            grip.icon.disabled = true;
+        }
+        customizeGrip(chart.scrollbarX.startGrip);
+        customizeGrip(chart.scrollbarX.endGrip);
+
         virtualRatingSeries = chart.series.push(new am4charts.LineSeries());
         virtualRatingSeries.dataFields.valueY = "y";
         virtualRatingSeries.dataFields.dateX = "x";
         virtualRatingSeries.strokeWidth = 3;
         virtualRatingSeries.stroke = 'rgba(237,113,64,0.5)';
-
+        //adding bullet for virtual
         var bullet = new am4charts.CircleBullet();
         bullet.fill = 'rgba(255,255,255,0.5)';
         bullet.strokeWidth = 3;
-        bullet.tooltipText = `Contest: {contest}
-        Date: {x} Rating: {y}`;
+        bullet.tooltipText = `Date: {x} Rating: {y}
+        [bold]{contest}[/]`;
 
         virtualRatingSeries.bullets.push(bullet);
         virtualRatingSeries.tooltipText = "{valueY.value}";
@@ -54,10 +62,14 @@
         realRatingSeries.dataFields.dateX = "x";
         realRatingSeries.strokeWidth = 3;
         realRatingSeries.stroke = 'rgb(237,194,64)';
+        //adding bullet for real
         var bullet_real = new am4charts.CircleBullet();
         bullet_real.fill = 'rgb(255,255,255)';
-        bullet_real.strokeWidth = 3;
-        realRatingSeries.bullets.push(bullet);
+        bullet_real.strokeWidth = 3
+        bullet_real.tooltipText = `Date: {x} Rating: {y}
+        [bold]{contest}[/]`;
+
+        realRatingSeries.bullets.push(bullet_real);
         realRatingSeries.tooltipText = "{valueY.value}";
         realRatingSeries.filters.push(new am4core.DropShadowFilter());
 
