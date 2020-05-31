@@ -10,34 +10,30 @@ BASE = 'https://codeforces.com'
 
 # BASE = 'http://127.0.0.1:8080'
 
-def get_contests():
-    url = f'{BASE}/api/contest.list'
+def get_by_url(url):
     req = urllib.request.Request(url)
     r = urllib.request.urlopen(req).read()
     return json.loads(r.decode('utf-8'))['result']
+
+
+def get_contests():
+    return get_by_url(f'{BASE}/api/contest.list')
 
 
 def get_user_status(handle):
-    url = f'{BASE}/api/user.status?handle={handle}'
-    req = urllib.request.Request(url)
-    r = urllib.request.urlopen(req).read()
-    return json.loads(r.decode('utf-8'))['result']
+    return get_by_url(f'{BASE}/api/user.status?handle={handle}')
 
 
 def get_contest_standings(contest_id, show_unofficial=False):
-    url = f'{BASE}/api/contest.standings?contestId={contest_id}&showUnofficial={show_unofficial}'
-    req = urllib.request.Request(url)
-    r = urllib.request.urlopen(req).read()
-    res = json.loads(r.decode('utf-8'))
-    return res["result"]
+    return get_by_url(f'{BASE}/api/contest.standings?contestId={contest_id}&showUnofficial={show_unofficial}')
 
 
 def get_contest_rating_changes(contest_id):
-    url = f'{BASE}/api/contest.ratingChanges?contestId={contest_id}'
-    req = urllib.request.Request(url)
-    r = urllib.request.urlopen(req).read()
-    res = json.loads(r.decode('utf-8'))
-    return res["result"]
+    return get_by_url(f'{BASE}/api/contest.ratingChanges?contestId={contest_id}')
+
+
+def get_user_performance(contest_id, handle, show_unofficial=True):
+    return get_by_url(f'{BASE}/api/contest.standings?contestId={contest_id}&handles={handle}&showUnofficial={show_unofficial}')
 
 
 def read_contest(contest_id, refresh=False):
@@ -77,7 +73,6 @@ def read_contest(contest_id, refresh=False):
             return False
     contest.isBroken = False
     session.add(contest)
-    session.commit()
     performances = {}
     for contestant in standings:
         if contestant["party"]["participantType"] in ["CONTESTANT", "VIRTUAL", "OUT_OF_COMPETITION"]:
@@ -96,22 +91,43 @@ def read_contest(contest_id, refresh=False):
     return True
 
 
-def calculate_rating_delta(contest_id, other_users):
+def calculate_rating_delta(contest_id, handle, rating, recalculate=False):
+    query = session.query(Delta.delta).filter(
+        Delta.contestId == contest_id and Delta.handle == handle and Delta.oldRating == rating)
+    if recalculate:
+        query.delete(synchronize_session=False)
+        session.commit()
+    elif query.scalar() is not None:
+        return True
     if not read_contest(contest_id):
-        return None
+        return False
     users = session.query(Performance.handle, Performance.points, Performance.penalty, Performance.oldRating) \
         .filter(Performance.contestId == contest_id).filter(Performance.oldRating != None).all()
-    for handle, rating in other_users:
-        points, penalty = session.query(Performance.points, Performance.penalty) \
-            .filter(Performance.contestId == contest_id).filter(Performance.handle == handle).one()
-        users.append((handle, points, penalty, rating))
+    for i in range(len(users)):
+        if users[i][0] == handle:
+            users.pop(i)
+            break
+    user_standings = get_user_performance(contest_id, handle)["rows"]
+    performance = (0, {})
+    for contestant in user_standings:
+        if contestant["party"]["participantType"] in ["CONTESTANT", "VIRTUAL", "OUT_OF_COMPETITION"] and contestant["party"]["startTimeSeconds"] > performance[0]:
+            performance = (contestant["party"]["startTimeSeconds"], contestant)
+    points, penalty = performance[1]["points"], performance[1]["penalty"]
+    users.append((handle, points, penalty, rating))
     calculator = rating_calculator.CodeforcesRatingCalculator(users)
-    return calculator.calculate_rating_changes()
+    delta = Delta()
+    delta.contestId = contest_id
+    delta.handle = handle
+    delta.oldRating = rating
+    delta.delta = calculator.calculate_rating_changes()[handle]
+    session.add(delta)
+    session.commit()
+    return True
 
 
 def main():
     current_rating = 1500
-    handle = "Sonechko"
+    handle = "EndRay"
     user_status = get_user_status(handle)
     contests = []
     for submission in user_status:
@@ -124,14 +140,14 @@ def main():
     data = []
 
     for start_time_seconds, contest_id, participant_type in contests:
-        delta = calculate_rating_delta(contest_id, [(handle, current_rating)])
-        if delta is None:
+        if not calculate_rating_delta(contest_id, handle, current_rating):
             continue
-        new_rating = current_rating + delta[handle]
+        delta = session.query(Delta.delta).filter(Delta.contestId == contest_id and Delta.handle == handle and Delta.oldRating == current_rating).scalar()
+        new_rating = current_rating + delta
         print(f'{datetime.fromtimestamp(start_time_seconds)}\t:  {current_rating} -> {new_rating}')
         current_rating = new_rating
-        data.append({"x": start_time_seconds, "y": new_rating, "delta": delta[handle], "contest": session.query(Contest.name) \
-                     .filter(Contest.contestId == contest_id).one()})
+        data.append({"x": start_time_seconds, "y": new_rating, "delta": delta, "contest": session.query(Contest.name) \
+                    .filter(Contest.contestId == contest_id).one()})
 
     data_f = open(f"static/{handle}", "w")
     data_f.write(json.dumps(data))

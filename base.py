@@ -24,6 +24,14 @@ class Contest(Base):
     isBroken = Column(Integer)
 
 
+class Delta(Base):
+    __tablename__ = 'deltas'
+    contestId = Column(Integer, primary_key=True)
+    handle = Column(String, primary_key=True)
+    oldRating = Column(Integer, primary_key=True)
+    delta = Column(Integer)
+
+
 engine = create_engine('sqlite:///codeforces.sqlite')
 Base.metadata.create_all(engine)
 Session = sessionmaker(bind=engine)
