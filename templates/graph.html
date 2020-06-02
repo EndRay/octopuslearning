@@ -97,10 +97,11 @@
         fetchData('EndRay');
     });
     async function fetchData(handle) {
-        let response = await fetch("{{ url_for('static', filename='') }}"+handle);
+        let response = await fetch("/api/virtualRating/"+handle);
 
         if (response.ok) {
           let data = await response.json();
+          console.log(data)
           // virtualRatingSeries.data = data.map(({x, y, delta, contest}) => ({x: new Date(x * 1000), y: y, delta: delta, contest:contest}));
           virtualRatingSeries.data = data.map(({x, y, delta, contest}) => {
                var dict = {};

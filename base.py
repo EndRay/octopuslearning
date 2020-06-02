@@ -32,7 +32,7 @@ class Delta(Base):
     delta = Column(Integer)
 
 
-engine = create_engine('sqlite:///codeforces.sqlite')
+engine = create_engine('sqlite:///codeforces.sqlite', connect_args={"check_same_thread": False})
 Base.metadata.create_all(engine)
 Session = sessionmaker(bind=engine)
 Session.configure(bind=engine)  # once engine is available
