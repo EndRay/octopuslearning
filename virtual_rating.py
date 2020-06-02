@@ -33,7 +33,8 @@ def get_contest_rating_changes(contest_id):
 
 
 def get_user_performance(contest_id, handle, show_unofficial=True):
-    return get_by_url(f'{BASE}/api/contest.standings?contestId={contest_id}&handles={handle}&showUnofficial={show_unofficial}')
+    return get_by_url(
+        f'{BASE}/api/contest.standings?contestId={contest_id}&handles={handle}&showUnofficial={show_unofficial}')
 
 
 def read_contest(contest_id, refresh=False):
@@ -110,7 +111,8 @@ def calculate_rating_delta(contest_id, handle, rating, recalculate=False):
     user_standings = get_user_performance(contest_id, handle)["rows"]
     performance = (0, {})
     for contestant in user_standings:
-        if contestant["party"]["participantType"] in ["CONTESTANT", "VIRTUAL", "OUT_OF_COMPETITION"] and contestant["party"]["startTimeSeconds"] > performance[0]:
+        if contestant["party"]["participantType"] in ["CONTESTANT", "VIRTUAL", "OUT_OF_COMPETITION"] and \
+                contestant["party"]["startTimeSeconds"] > performance[0]:
             performance = (contestant["party"]["startTimeSeconds"], contestant)
     points, penalty = performance[1]["points"], performance[1]["penalty"]
     users.append((handle, points, penalty, rating))
@@ -125,9 +127,8 @@ def calculate_rating_delta(contest_id, handle, rating, recalculate=False):
     return True
 
 
-def main():
+def calculate(handle):
     current_rating = 1500
-    handle = "EndRay"
     user_status = get_user_status(handle)
     contests = []
     for submission in user_status:
@@ -142,16 +143,11 @@ def main():
     for start_time_seconds, contest_id, participant_type in contests:
         if not calculate_rating_delta(contest_id, handle, current_rating):
             continue
-        delta = session.query(Delta.delta).filter(Delta.contestId == contest_id and Delta.handle == handle and Delta.oldRating == current_rating).scalar()
+        delta = session.query(Delta.delta).filter(
+            Delta.contestId == contest_id and Delta.handle == handle and Delta.oldRating == current_rating).scalar()
         new_rating = current_rating + delta
-        print(f'{datetime.fromtimestamp(start_time_seconds)}\t:  {current_rating} -> {new_rating}')
+        # print(f'{datetime.fromtimestamp(start_time_seconds)}\t:  {current_rating} -> {new_rating}')
         current_rating = new_rating
         data.append({"x": start_time_seconds, "y": new_rating, "delta": delta, "contest": session.query(Contest.name) \
                     .filter(Contest.contestId == contest_id).one()})
-
-    data_f = open(f"static/{handle}", "w")
-    data_f.write(json.dumps(data))
-    data_f.close()
-
-
-main()
+    return data

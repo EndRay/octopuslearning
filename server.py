@@ -1,5 +1,6 @@
 from flask import Flask, render_template, jsonify
 
+import virtual_rating
 from tasks_performance import task_performance_stats
 
 app = Flask(__name__)
@@ -22,8 +23,8 @@ def task_info(contest, index):
 
 
 @app.route('/api/virtualRating/<handle>')
-def virtual_rating(handle):
-    return jsonify([{"x": 1488719100, "y": 1485, "delta": -15, "contest": ["Codeforces Round #403 (Div. 2, based on Technocup 2017 Finals)"]}, {"x": 1489590300, "y": 1549, "delta": 64, "contest": ["Codeforces Round #404 (Div. 2)"]}])
+def get_virtual_rating(handle):
+    return jsonify(virtual_rating.calculate(handle))
 
 
 if __name__ == "__main__":
