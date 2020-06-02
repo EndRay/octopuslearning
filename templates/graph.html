@@ -97,7 +97,7 @@
         fetchData('EndRay');
     });
     async function fetchData(handle) {
-        let response = await fetch("{{ url_for('static', filename='') }}"+handle);
+        let response = await fetch("/api/virtualRating/"+handle);
 
         if (response.ok) {
           let data = await response.json();
