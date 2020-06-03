@@ -32,6 +32,17 @@
 
         var dateAxis = chart.xAxes.push(new am4charts.DateAxis());
         var valueAxis = chart.yAxes.push(new am4charts.ValueAxis());
+        valueAxis.renderer.grid.template.disabled = true;
+        valueAxis.renderer.labels.template.disabled = true;
+        valueAxis.extraMin = 0.02;
+        valueAxis.extraMax = 0.02;
+        [0, 1200, 1400, 1600, 1900, 2100, 2300, 2400, 2600, 3000].forEach(
+          value => {
+              var range = valueAxis.axisRanges.create();
+              range.value = value;
+              range.label.text = "{value}";
+            }
+        )
 
         //adding scrollbars
         chart.scrollbarX = new am4core.Scrollbar();
