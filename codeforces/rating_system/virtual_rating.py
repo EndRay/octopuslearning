@@ -1,3 +1,4 @@
+from codeforces.api import get_user_status, get_user_performance, get_contest_standings, get_contest_rating_changes
 from codeforces.db import *
 
 from codeforces.rating_system import rating_calculator
