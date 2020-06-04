@@ -113,19 +113,14 @@
         if (response.ok) {
           let data = await response.json();
           console.log(data)
-          // virtualRatingSeries.data = data.map(({x, y, delta, contest}) => ({x: new Date(x * 1000), y: y, delta: delta, contest:contest}));
-          virtualRatingSeries.data = data.map(({x, y, delta, contest}) => {
-               var dict = {};
-               dict.x = x * 1000;
-               dict.y = y;
-               var tooltip = "";
-               tooltip += '<div style = "color: black">= ' + y.toString() + ' ('
+          virtualRatingSeries.data = data.map(({x, y, delta, contest}) => ({
+               x : x * 1000,
+               y : y,
+               tooltip : '<div style = "color: black">= ' + y.toString() + ' ('
                    + '<span style="color:'+ ((delta < 0) ? 'red">':'green">+')
-                   + delta.toString() + '</span>)</div>';
-               tooltip += '<b>' + contest + '</b>';
-               dict.tooltip = tooltip;
-               return dict;
-           });
+                   + delta.toString() + '</span>)</div>'
+                   +'<b>' + contest + '</b>'
+           }));
           virtualRatingSeries.name = handle + "(virtual)";
         } else {
           console.log("HTTP error: " + response.status);
@@ -136,18 +131,14 @@
         if (cfResponse.ok) {
           let data = await cfResponse.json();
           console.log(data.result);
-           realRatingSeries.data = data.result.map((ratingChange) => {
-               var dict = {};
-               dict.x = new Date(ratingChange.ratingUpdateTimeSeconds * 1000);
-               dict.y = ratingChange.newRating;
-               var tooltip = "";
-               tooltip += '<div style = "color: black">= ' + dict.y.toString() + ' ('
+           realRatingSeries.data = data.result.map(ratingChange => ({
+               x: new Date(ratingChange.ratingUpdateTimeSeconds * 1000),
+               y: ratingChange.newRating,
+               tooltip : '<div style = "color: black">= ' + ratingChange.newRating + ' ('
                    + '<span style="color:'+ ((ratingChange.newRating - ratingChange.oldRating < 0)?'red">':'green">+')
-                   + (ratingChange.newRating - ratingChange.oldRating).toString() + '</span>)</div>';
-               tooltip += '<b>' + ratingChange.contestName + '</b>';
-               dict.tooltip = tooltip;
-               return dict;
-           });
+                   + (ratingChange.newRating - ratingChange.oldRating) + '</span>)</div>'
+                   + '<b>' + ratingChange.contestName + '</b>'
+           }));
           realRatingSeries.name = handle;
         } else {
           console.log("HTTP error: " + cfResponse.status);
