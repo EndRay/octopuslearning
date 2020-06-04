@@ -1,7 +1,7 @@
 from flask import Flask, render_template, jsonify
 
+from codeforces.analysis.tasks_performance import task_performance_stats
 from codeforces.rating_system import virtual_rating
-from codeforces.analysis import task_performance_stats
 
 app = Flask(__name__)
 
