@@ -1,6 +1,7 @@
 from flask import Flask, render_template, jsonify
 
 from codeforces.analysis.tasks_performance import task_performance_stats
+from codeforces.db import Session
 from codeforces.rating_system import virtual_rating
 
 app = Flask(__name__)
@@ -30,6 +31,11 @@ def get_virtual_rating(handle):
 @app.route('/favicon.ico')
 def favicon():
     return app.send_static_file('favicon.ico')
+
+
+@app.teardown_appcontext
+def shutdown_session(exception=None):
+    Session.remove()
 
 if __name__ == "__main__":
     app.run(debug=True)

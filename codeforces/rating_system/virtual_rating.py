@@ -4,6 +4,7 @@ from codeforces.db import *
 from codeforces.rating_system import rating_calculator
 
 def read_contest(contest_id, refresh=False):
+    session = Session()
     if refresh:
         session.query(Performance).filter(Performance.contestId == contest_id).delete(synchronize_session=False)
         session.query(Contest).filter(Contest.contestId == contest_id).delete(synchronize_session=False)
@@ -59,6 +60,7 @@ def read_contest(contest_id, refresh=False):
 
 
 def calculate_rating_delta(contest_id, handle, rating, recalculate=False):
+    session = Session()
     query = session.query(Delta.delta).filter(
         Delta.contestId == contest_id and Delta.handle == handle and Delta.oldRating == rating)
     if recalculate:
@@ -109,6 +111,7 @@ def calculate(handle):
     for start_time_seconds, contest_id, participant_type in contests:
         if not calculate_rating_delta(contest_id, handle, current_rating):
             continue
+        session = Session()
         delta = session.query(Delta.delta).filter(
             Delta.contestId == contest_id and Delta.handle == handle and Delta.oldRating == current_rating).scalar()
         new_rating = current_rating + delta

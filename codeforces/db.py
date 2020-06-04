@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, scoped_session
 
 Base = declarative_base()
 
@@ -32,8 +32,9 @@ class Delta(Base):
     delta = Column(Integer)
 
 
-engine = create_engine('sqlite:///codeforces.sqlite', connect_args={"check_same_thread": False})
+engine = create_engine('sqlite:///codeforces.sqlite')
 Base.metadata.create_all(engine)
-Session = sessionmaker(bind=engine)
+Session = scoped_session(sessionmaker(autocommit=False,
+                                         autoflush=False,
+                                         bind=engine))
 Session.configure(bind=engine)  # once engine is available
-session = Session()
